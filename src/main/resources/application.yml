@@ -1,0 +1,6 @@
+eureka:
+  client:
+    enabled: false
+spring:
+  application:
+    name: apizza-order
