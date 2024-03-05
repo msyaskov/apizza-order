@@ -1,0 +1,13 @@
+version: '3.8'
+services:
+  postgres:
+    image: postgres:latest
+    ports:
+      - "5432:5432"
+    volumes:
+      - './dbdata:/var/lib/postgresql/data'
+    environment:
+      POSTGRES_USER: 'user'
+      POSTGRES_PASSWORD: 'pass'
+      POSTGRES_DB: 'apizza_order_db'
+      PGDATA: '/var/lib/postgresql/data/pgdata'
