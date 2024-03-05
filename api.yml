@@ -213,7 +213,9 @@ components:
         pizzas:
           type: array
           items:
-            $ref: '#/components/schemas/Pizza'
+            type: string
+            format: uuid
+            description: Идентификаторы заказанных пицц
     OrderCandidate:
       type: object
       properties:
