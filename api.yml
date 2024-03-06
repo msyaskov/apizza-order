@@ -18,7 +18,7 @@ paths:
       description: Получить список всех пицц
       security:
         - BearerAuth:
-            - read_pizzas
+            - user
       tags:
         - Pizzas
       responses:
@@ -36,7 +36,7 @@ paths:
       description: Добавить пиццу в меню
       security:
         - BearerAuth:
-            - write_pizzas
+            - admin
       tags:
         - Pizzas
       requestBody:
@@ -60,7 +60,7 @@ paths:
       description: Получить пиццу по её идентификатору
       security:
         - BearerAuth:
-            - read_pizzas
+            - user
       tags:
         - Pizzas
       responses:
@@ -78,7 +78,7 @@ paths:
       description: Удалить пиццу по её идентификатору
       security:
         - BearerAuth:
-            - write_pizzas
+            - admin
       tags:
         - Pizzas
       responses:
@@ -93,7 +93,7 @@ paths:
       description: Получить список всех заказов
       security:
         - BearerAuth:
-            - read_orders
+            - user
       tags:
         - Orders
       responses:
@@ -111,7 +111,7 @@ paths:
       description: Создать заказ
       security:
         - BearerAuth:
-            - write_orders
+            - user
       tags:
         - Orders
       requestBody:
@@ -135,7 +135,7 @@ paths:
       description: Получить информацию о заказе по его идентификатору
       security:
         - BearerAuth:
-            - read_orders
+            - user
       tags:
         - Orders
       responses:
@@ -153,7 +153,7 @@ paths:
       description: Отменить (удалить) заказ по его идентификатору
       security:
         - BearerAuth:
-            - delete_orders
+            - admin
       tags:
         - Orders
       responses:
