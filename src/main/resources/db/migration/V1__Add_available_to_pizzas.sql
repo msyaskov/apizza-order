@@ -1,0 +1,2 @@
+ALTER TABLE pizzas
+    ADD available BOOLEAN NOT NULL DEFAULT TRUE;
