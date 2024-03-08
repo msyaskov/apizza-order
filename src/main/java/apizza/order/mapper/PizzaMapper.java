@@ -2,36 +2,13 @@ package apizza.order.mapper;
 
 import apizza.order.dto.PizzaDto;
 import apizza.order.entity.Pizza;
-import org.springframework.stereotype.Component;
+import org.mapstruct.Mapper;
 
-@Component
-public class PizzaMapper implements Mapper<Pizza, PizzaDto> {
+@Mapper(componentModel = "spring")
+public abstract class PizzaMapper {
 
-    @Override
-    public PizzaDto toDto(Pizza entity) {
-        if (entity == null) {
-            return null;
-        }
+    public abstract PizzaDto toDto(Pizza pizza);
 
-        return PizzaDto.builder()
-                .id(entity.getId())
-                .name(entity.getName())
-                .description(entity.getDescription())
-                .price(entity.getPrice())
-                .build();
-    }
+    public abstract Pizza toEntity(PizzaDto pizzaDto);
 
-    @Override
-    public Pizza toEntity(PizzaDto dto) {
-        if (dto == null) {
-            return null;
-        }
-
-        return Pizza.builder()
-                .id(dto.getId())
-                .name(dto.getName())
-                .description(dto.getDescription())
-                .price(dto.getPrice())
-                .build();
-    }
 }
