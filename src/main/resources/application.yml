@@ -11,3 +11,5 @@ spring:
     url: 'jdbc:postgresql://localhost:5432/apizza_order_db'
   kafka:
     bootstrap-servers: localhost:29092
+  jwt:
+    jwks-url: 'http://localhost:5555/.well-known/jwks'
