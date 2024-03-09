@@ -2,10 +2,11 @@ package apizza.order.itegrationtests;
 
 import apizza.order.dto.OrderDto;
 import apizza.order.dto.PizzaDto;
-import apizza.order.dto.UUIDListDto;
 import apizza.order.entity.Order;
 import apizza.order.entity.OrderStatus;
 import apizza.order.entity.Pizza;
+import apizza.order.security.WithMockJWTAdmin;
+import apizza.order.security.WithMockJWTUser;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
@@ -13,23 +14,18 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import org.mockito.ArgumentMatchers;
-import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.orm.jpa.AutoConfigureTestEntityManager;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.http.MediaType;
 import org.springframework.kafka.core.KafkaTemplate;
-import org.springframework.kafka.test.context.EmbeddedKafka;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.transaction.support.TransactionTemplate;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.UUID;
@@ -79,9 +75,49 @@ public class OrderControllerIntegrationTests {
         return Stream.of(Arguments.of(order(), pizza()));
     }
 
+    @WithMockJWTAdmin
     @ParameterizedTest
     @MethodSource("testGetOrderMethodSource")
-    void testGetOrder(final Order order, final Pizza pizza) throws Exception {
+    void testGetOrder_whenPrincipalIsAdmin(final Order order, final Pizza pizza) throws Exception {
+        transactionTemplate.execute(s -> {
+            entityManager.persist(pizza);
+            order.setPizzas(new LinkedList<>(List.of(pizza)));
+            return entityManager.persist(order);
+        });
+
+        MvcResult mvcResult = mvc.perform(MockMvcRequestBuilders
+                        .get("/orders/{orderId}", order.getId())
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andReturn();
+
+        OrderDto body = objectMapper.readValue(mvcResult.getResponse().getContentAsByteArray(), OrderDto.class);
+        assertOrderEqualsOrderDto(order, body);
+    }
+
+    @WithMockJWTUser
+    @ParameterizedTest
+    @MethodSource("testGetOrderMethodSource")
+    void testGetOrder_whenPrincipalIsUserNotOwner(final Order order, final Pizza pizza) throws Exception {
+        // order.userId != principal
+        transactionTemplate.execute(s -> {
+            entityManager.persist(pizza);
+            order.setPizzas(new LinkedList<>(List.of(pizza)));
+            return entityManager.persist(order);
+        });
+
+        mvc.perform(MockMvcRequestBuilders
+                        .get("/orders/{orderId}", order.getId())
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isForbidden());
+    }
+    @WithMockJWTUser
+    @ParameterizedTest
+    @MethodSource("testGetOrderMethodSource")
+    void testGetOrder_whenPrincipalIsUserOwner(final Order order, final Pizza pizza) throws Exception {
+        order.setUserId(UUID.fromString(WithMockJWTUser.DEFAULT_USER_ID)); // order.userId == principal
+
         transactionTemplate.execute(s -> {
             entityManager.persist(pizza);
             order.setPizzas(new LinkedList<>(List.of(pizza)));
@@ -100,6 +136,7 @@ public class OrderControllerIntegrationTests {
     }
 
     @Test
+    @WithMockJWTAdmin
     void testGetOrder_whenOrderNotFound() throws Exception {
         mvc.perform(MockMvcRequestBuilders
                         .get("/orders/{orderId}", UUID.randomUUID())
@@ -111,6 +148,7 @@ public class OrderControllerIntegrationTests {
         return Stream.of(Arguments.of(order(), order(), pizza(), pizza()));
     }
 
+    @WithMockJWTAdmin
     @ParameterizedTest
     @MethodSource("testGetOrdersMethodSource")
     void testGetOrders(final Order o1, final Order o2, final Pizza p1, final Pizza p2) throws Exception {
@@ -146,9 +184,65 @@ public class OrderControllerIntegrationTests {
         }
     }
 
+    @WithMockJWTAdmin
     @ParameterizedTest
     @MethodSource("testGetOrdersMethodSource")
-    void testGetOrdersByUserId(final Order o1, final Order o2, final Pizza p1, final Pizza p2) throws Exception {
+    void testGetOrdersByUserId_whenPrincipalIsAdmin(final Order o1, final Order o2, final Pizza p1, final Pizza p2) throws Exception {
+        transactionTemplate.execute(s -> {
+            entityManager.persist(p1);
+            entityManager.persist(p2);
+
+            o1.setPizzas(new LinkedList<>(List.of(p1, p2)));
+            entityManager.persist(o1);
+
+            o2.setPizzas(new LinkedList<>(List.of(p1, p2)));
+            return entityManager.persist(o2);
+        });
+
+        MvcResult mvcResult = mvc.perform(MockMvcRequestBuilders
+                        .get("/orders")
+                        .param("userId", o1.getUserId().toString())
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andReturn();
+
+        List<OrderDto> orders = objectMapper.readValue(mvcResult.getResponse().getContentAsByteArray(), new TypeReference<List<OrderDto>>() {});
+
+        assertEquals(1, orders.size());
+        assertOrderEqualsOrderDto(o1, orders.iterator().next());
+    }
+
+    @WithMockJWTUser
+    @ParameterizedTest
+    @MethodSource("testGetOrdersMethodSource")
+    void testGetOrdersByUserId_whenPrincipalIsUserNotOwner(final Order o1, final Order o2, final Pizza p1, final Pizza p2) throws Exception {
+        // principal != requestParams.userId
+        transactionTemplate.execute(s -> {
+            entityManager.persist(p1);
+            entityManager.persist(p2);
+
+            o1.setPizzas(new LinkedList<>(List.of(p1, p2)));
+            entityManager.persist(o1);
+
+            o2.setPizzas(new LinkedList<>(List.of(p1, p2)));
+            return entityManager.persist(o2);
+        });
+
+        mvc.perform(MockMvcRequestBuilders
+                        .get("/orders")
+                        .param("userId", o1.getUserId().toString())
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isForbidden())
+                .andReturn();
+    }
+
+    @WithMockJWTUser
+    @ParameterizedTest
+    @MethodSource("testGetOrdersMethodSource")
+    void testGetOrdersByUserId_whenPrincipalIsUserOwner(final Order o1, final Order o2, final Pizza p1, final Pizza p2) throws Exception {
+        o1.setUserId(UUID.fromString(WithMockJWTUser.DEFAULT_USER_ID)); // principal == requestParams.userId
+
         transactionTemplate.execute(s -> {
             entityManager.persist(p1);
             entityManager.persist(p2);
@@ -184,6 +278,7 @@ public class OrderControllerIntegrationTests {
         ), pizza()));
     }
 
+    @WithMockJWTUser
     @ParameterizedTest
     @MethodSource("testPostOrderMethodSource")
     void testPostOrder(final OrderDto candidate, final Pizza pizza) throws Exception {
@@ -209,6 +304,22 @@ public class OrderControllerIntegrationTests {
         verify(orderKafkaTemplate).send(anyString(), anyString(), any(OrderDto.class));
     }
 
+    @ParameterizedTest
+    @MethodSource("testPostOrderMethodSource")
+    void testPostOrder_whenNotAuthenticated(final OrderDto candidate, final Pizza pizza) throws Exception {
+        transactionTemplate.execute(s -> {
+            entityManager.persistAndFlush(pizza);
+            candidate.setPizzas(List.of(pizza.getId()));
+            return 0;
+        });
+
+        mvc.perform(MockMvcRequestBuilders.post("/orders")
+                        .accept(MediaType.APPLICATION_JSON)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsBytes(candidate)))
+                .andExpect(status().isForbidden());
+    }
+
     private static Stream<Arguments> testPostOrderWhenInvalidCandidateMethodSource() {
         return Stream.of(Arguments.of(orderDto(b -> b.id(UUID.randomUUID()))), // not null
                 Arguments.of(orderDto(b -> b.userId(UUID.randomUUID()))), // not null
@@ -218,6 +329,7 @@ public class OrderControllerIntegrationTests {
                 Arguments.of(orderDto(b -> b.pizzas(List.of())))); // empty
     }
 
+    @WithMockJWTUser
     @ParameterizedTest
     @MethodSource("testPostOrderWhenInvalidCandidateMethodSource")
     void testPostOrder_whenInvalidCandidate(final OrderDto candidate) throws Exception {
@@ -239,6 +351,7 @@ public class OrderControllerIntegrationTests {
                 .pizzas(null))));
     }
 
+    @WithMockJWTAdmin
     @ParameterizedTest
     @MethodSource("testPatchOrderMethodSource")
     void testPatchOrder(final Order order, final OrderDto patch) throws Exception {
@@ -286,6 +399,20 @@ public class OrderControllerIntegrationTests {
                         .pizzas(List.of()))));  // not null
     }
 
+    @WithMockJWTUser
+    @ParameterizedTest
+    @MethodSource("testPatchOrderMethodSource")
+    void testPatchOrder_whenPrincipalInNotAdmin(final Order order, final OrderDto patch) throws Exception {
+        transactionTemplate.execute(s -> entityManager.persist(order));
+
+        mvc.perform(MockMvcRequestBuilders.patch("/orders/{orderId}", order.getId())
+                        .accept(MediaType.APPLICATION_JSON)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsBytes(patch)))
+                .andExpect(status().isForbidden());
+    }
+
+    @WithMockJWTAdmin
     @ParameterizedTest
     @MethodSource("testPatchOrderWhenInvalidCandidateMethodSource")
     void testPatchOrder_whenInvalidCandidate(final OrderDto patch) throws Exception {
@@ -348,31 +475,6 @@ public class OrderControllerIntegrationTests {
                 .available(true);
         builderConsumer.accept(builder);
         return builder.build();
-    }
-
-    private static void assertPizzaDtoEqualsPizzaDto(PizzaDto expected, PizzaDto actual) {
-        if (expected == actual) {
-            return;
-        }
-
-        assertAll(() -> assertEquals(expected.getId(), actual.getId()),
-                () -> assertEquals(expected.getName(), actual.getName()),
-                () -> assertEquals(expected.getDescription(), actual.getDescription()),
-                () -> assertEquals(expected.getPrice(), actual.getPrice()),
-                () -> assertEquals(expected.getAvailable(), actual.getAvailable()));
-    }
-
-    private static void assertPizzaEqualsPizzaDto(Pizza pizza, PizzaDto pizzaDto) {
-        assertAll(() -> assertEquals(pizza.getId(), pizzaDto.getId()),
-                () -> assertEquals(pizza.getName(), pizzaDto.getName()),
-                () -> assertEquals(pizza.getDescription(), pizzaDto.getDescription()),
-                () -> assertEquals(pizza.getPrice(), pizzaDto.getPrice()),
-                () -> assertEquals(pizza.getAvailable(), pizzaDto.getAvailable()));
-    }
-
-    @Test
-    void test() {
-
     }
 
     private static void assertOrderEqualsOrderDto(Order order, OrderDto orderDto) {

@@ -10,6 +10,7 @@ import apizza.order.validation.group.PostCandidateGroup;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -25,13 +26,15 @@ public class PizzaController {
 
     private final PizzaMapper pizzaMapper;
 
-    @GetMapping(path = "/pizzas/{pizzaId}", produces = MediaType.APPLICATION_JSON_VALUE) // TODO for anybody
+    @PreAuthorize("authenticated")
+    @GetMapping(path = "/pizzas/{pizzaId}", produces = MediaType.APPLICATION_JSON_VALUE)
     public PizzaDto getPizza(@PathVariable UUID pizzaId) {
         Pizza pizza = pizzaService.getPizza(pizzaId);
         return mapPizzaToPizzaDto(pizza);
     }
 
-    @GetMapping(path = "/pizzas", produces = MediaType.APPLICATION_JSON_VALUE) // TODO for anybody
+    @PreAuthorize("authenticated")
+    @GetMapping(path = "/pizzas", produces = MediaType.APPLICATION_JSON_VALUE)
     public Collection<PizzaDto> getPizzas(@RequestBody(required = false) UUIDListDto ids) {
         List<Pizza> pizzas = (ids == null || ids.getIds() == null) ? pizzaService.getPizzas() : pizzaService.getPizzas(ids.getIds());
         return pizzas.stream()
@@ -40,16 +43,18 @@ public class PizzaController {
     }
 
     @ResponseStatus(HttpStatus.CREATED)
+    @PreAuthorize("hasAuthority('ADMIN')")
     @PostMapping(path = "/pizzas", produces = MediaType.APPLICATION_JSON_VALUE,
-            consumes = MediaType.APPLICATION_JSON_VALUE) // TODO for admin
+            consumes = MediaType.APPLICATION_JSON_VALUE)
     public PizzaDto postPizza(@Validated(PostCandidateGroup.class) @RequestBody PizzaDto candidateDto) {
         Pizza candidate = mapPizzaDtoToPizza(candidateDto);
         Pizza pizza = pizzaService.addPizza(candidate);
         return mapPizzaToPizzaDto(pizza);
     }
 
+    @PreAuthorize("hasAuthority('ADMIN')")
     @PatchMapping(path =  "/pizzas/{pizzaId}", produces = MediaType.APPLICATION_JSON_VALUE,
-            consumes = MediaType.APPLICATION_JSON_VALUE) // TODO for admin
+            consumes = MediaType.APPLICATION_JSON_VALUE)
     public PizzaDto patchPizza(@PathVariable UUID pizzaId,
                                @RequestBody @Validated(PatchCandidateGroup.class) PizzaDto candidateDto) {
         Pizza candidate = mapPizzaDtoToPizza(candidateDto);

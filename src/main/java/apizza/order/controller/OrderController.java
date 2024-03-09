@@ -11,6 +11,9 @@ import apizza.order.validation.group.PostCandidateGroup;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.security.access.prepost.PostAuthorize;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -27,21 +30,25 @@ public class OrderController {
     private final PizzaService pizzaService;
     private final OrderMapper orderMapper;
 
-    @GetMapping("/orders/{orderId}") // TODO for admin если заказ не пользователя
+    @PreAuthorize("isAuthenticated()")
+    @PostAuthorize("(hasAuthority('USER') and returnObject.userId.equals(principal)) or hasAuthority('ADMIN')")
+    @GetMapping(path = "/orders/{orderId}", produces = MediaType.APPLICATION_JSON_VALUE)
     public OrderDto getOrder(@PathVariable UUID orderId) {
         Order order = orderService.getOrder(orderId);
         return mapOrderToOrderDto(order);
     }
 
-    @GetMapping(path = "/orders", produces = MediaType.APPLICATION_JSON_VALUE) // TODO for admin
+    @PreAuthorize("hasAuthority('ADMIN')")
+    @GetMapping(path = "/orders", produces = MediaType.APPLICATION_JSON_VALUE)
     public Collection<OrderDto> getOrders() {
         return orderService.getOrders().stream()
                 .map(this::mapOrderToOrderDto)
                 .toList();
     }
 
+    @PreAuthorize("hasAuthority('ADMIN') or (hasAuthority('USER') and #userId.equals(principal))")
     @GetMapping(path = "/orders", produces = MediaType.APPLICATION_JSON_VALUE,
-            params = "userId") // TODO for admin
+            params = "userId")
     public Collection<OrderDto> getOrdersByUserId(@RequestParam UUID userId) {
         return orderService.getOrdersByUserId(userId).stream()
                 .map(this::mapOrderToOrderDto)
@@ -50,13 +57,15 @@ public class OrderController {
 
     @Transactional
     @ResponseStatus(HttpStatus.CREATED)
+    @PreAuthorize("authenticated")
     @PostMapping(path = "/orders", produces = MediaType.APPLICATION_JSON_VALUE,
-            consumes = MediaType.APPLICATION_JSON_VALUE) // TODO for anybody
-    public OrderDto postOrder(@RequestBody @Validated(PostCandidateGroup.class) OrderDto candidateDto) {
+            consumes = MediaType.APPLICATION_JSON_VALUE)
+    public OrderDto postOrder(@RequestBody @Validated(PostCandidateGroup.class) OrderDto candidateDto,
+                              Authentication authentication) {
         List<Pizza> orderedPizzas = pizzaService.getPizzas(candidateDto.getPizzas());
 
         Order candidate = Order.builder()
-                .userId(UUID.randomUUID()) // TODO User authentication
+                .userId((UUID) authentication.getPrincipal())
                 .pizzas(orderedPizzas)
                 .build();
 
@@ -64,7 +73,7 @@ public class OrderController {
         return mapOrderToOrderDto(order);
     }
 
-    // TODO for admin
+    @PreAuthorize("hasAuthority('ADMIN')")
     @PatchMapping(path = "/orders/{orderId}", produces = MediaType.APPLICATION_JSON_VALUE,
             consumes = MediaType.APPLICATION_JSON_VALUE)
     public OrderDto patchOrder(@PathVariable UUID orderId,

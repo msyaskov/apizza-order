@@ -3,6 +3,8 @@ package apizza.order.itegrationtests;
 import apizza.order.dto.PizzaDto;
 import apizza.order.dto.UUIDListDto;
 import apizza.order.entity.Pizza;
+import apizza.order.security.WithMockJWTAdmin;
+import apizza.order.security.WithMockJWTUser;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
@@ -68,6 +70,7 @@ public class PizzaControllerIntegrationTests {
         return Stream.of(Arguments.of(pizza()));
     }
 
+    @WithMockJWTUser
     @ParameterizedTest
     @MethodSource("testGetPizzaMethodSource")
     void testGetPizza(final Pizza pizza) throws Exception {
@@ -85,6 +88,7 @@ public class PizzaControllerIntegrationTests {
     }
 
     @Test
+    @WithMockJWTUser
     void testGetPizza_whenPizzaNotFound() throws Exception {
         mvc.perform(MockMvcRequestBuilders
                         .get("/pizzas/{pizzaId}", UUID.randomUUID())
@@ -92,10 +96,19 @@ public class PizzaControllerIntegrationTests {
                 .andExpect(status().isNotFound());
     }
 
+    @Test
+    void testGetPizza_whenUnauthenticated() throws Exception {
+        mvc.perform(MockMvcRequestBuilders
+                        .get("/pizzas/{pizzaId}", UUID.randomUUID())
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isForbidden());
+    }
+
     private static Stream<Arguments> testGetPizzasMethodSource() {
         return Stream.of(Arguments.of(pizza(), pizza(), pizza()));
     }
 
+    @WithMockJWTUser
     @ParameterizedTest
     @MethodSource("testGetPizzasMethodSource")
     void testGetPizzas(final Pizza p1, final Pizza p2, final Pizza p3) throws Exception {
@@ -117,6 +130,7 @@ public class PizzaControllerIntegrationTests {
         assertPizzaEqualsPizzaDto(p3, pizzas.get(2));
     }
 
+    @WithMockJWTUser
     @ParameterizedTest
     @MethodSource("testGetPizzasMethodSource")
     void testGetPizzas_whenSpecifiedIds(final Pizza p1, final Pizza p2, final Pizza p3) throws Exception {
@@ -149,10 +163,23 @@ public class PizzaControllerIntegrationTests {
         }
     }
 
+    @ParameterizedTest
+    @MethodSource("testGetPizzasMethodSource")
+    void testGetPizzas_whenUnauthenticated(final Pizza p1, final Pizza p2, final Pizza p3) throws Exception {
+        transactionTemplate.execute(s ->
+                List.of(entityManager.persist(p1), entityManager.persist(p2), entityManager.persist(p3)));
+
+        mvc.perform(MockMvcRequestBuilders
+                        .get("/pizzas")
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isForbidden());
+    }
+
     private static Stream<Arguments> testPostPizzaMethodSource() {
         return Stream.of(Arguments.of(pizzaDto()));
     }
 
+    @WithMockJWTAdmin
     @ParameterizedTest
     @MethodSource("testPostPizzaMethodSource")
     void testPostPizza(final PizzaDto candidate) throws Exception {
@@ -186,6 +213,7 @@ public class PizzaControllerIntegrationTests {
                 Arguments.of(pizzaDto(b -> b.price(-249.90))));
     }
 
+    @WithMockJWTAdmin
     @ParameterizedTest
     @MethodSource("testPostPizzaWhenInvalidCandidateMethodSource")
     void testPostPizza_whenInvalidCandidate(final PizzaDto candidate) throws Exception {
@@ -198,10 +226,22 @@ public class PizzaControllerIntegrationTests {
         verify(pizzaKafkaTemplate, never()).send(anyString(), anyString(), any(PizzaDto.class));
     }
 
+    @WithMockJWTUser
+    @ParameterizedTest
+    @MethodSource("testPostPizzaMethodSource")
+    void testPostPizza_whenPrincipalIsNotAdmin(final PizzaDto candidate) throws Exception {
+        mvc.perform(MockMvcRequestBuilders.post("/pizzas")
+                        .accept(MediaType.APPLICATION_JSON)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsBytes(candidate)))
+                .andExpect(status().isForbidden());
+    }
+
     private static Stream<Arguments> testPatchPizzaMethodSource() {
         return Stream.of(Arguments.of(pizza(), pizzaDto(b -> b.description(null))));
     }
 
+    @WithMockJWTAdmin
     @ParameterizedTest
     @MethodSource("testPatchPizzaMethodSource")
     void testPatchPizza(final Pizza pizza, final PizzaDto patch) throws Exception {
@@ -231,6 +271,7 @@ public class PizzaControllerIntegrationTests {
                 Arguments.of(pizzaDto(b -> b.price(-249.90))));
     }
 
+    @WithMockJWTAdmin
     @ParameterizedTest
     @MethodSource("testPatchPizzaWhenInvalidCandidateMethodSource")
     void testPatchPizza_whenInvalidCandidate(final PizzaDto patch) throws Exception {
@@ -241,6 +282,19 @@ public class PizzaControllerIntegrationTests {
                 .andExpect(status().isBadRequest());
 
         verify(pizzaKafkaTemplate, never()).send(anyString(), anyString(), any(PizzaDto.class));
+    }
+
+    @WithMockJWTUser
+    @ParameterizedTest
+    @MethodSource("testPatchPizzaMethodSource")
+    void testPatchPizza_whenPrincipalInNotAdmin(final Pizza pizza, final PizzaDto patch) throws Exception {
+        transactionTemplate.execute(s -> entityManager.persist(pizza));
+
+        mvc.perform(MockMvcRequestBuilders.patch("/pizzas/{pizzaId}", pizza.getId())
+                        .accept(MediaType.APPLICATION_JSON)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsBytes(patch)))
+                .andExpect(status().isForbidden());
     }
 
     private static PizzaDto pizzaDto() {
