@@ -8,6 +8,7 @@ import apizza.order.service.order.OrderService;
 import apizza.order.service.pizza.PizzaService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Collection;
@@ -22,15 +23,30 @@ public class OrderController {
     private final PizzaService pizzaService;
     private final OrderMapper orderMapper;
 
-    @GetMapping("/orders") // TODO for admin
+    @GetMapping("/orders/{orderId}") // TODO for admin если заказ не пользователя
+    public OrderDto getOrder(@PathVariable UUID orderId) {
+        Order order = orderService.getOrder(orderId);
+        return mapOrderToOrderDto(order);
+    }
+
+    @GetMapping(path = "/orders", produces = MediaType.APPLICATION_JSON_VALUE) // TODO for admin
     public Collection<OrderDto> getOrders() {
         return orderService.getAllOrders().stream()
                 .map(this::mapOrderToOrderDto)
                 .toList();
     }
 
-    @PostMapping("/orders") // TODO for anybody
-    @ResponseStatus(HttpStatus.OK)
+    @GetMapping(path = "/orders", produces = MediaType.APPLICATION_JSON_VALUE,
+            params = "userId") // TODO for admin
+    public Collection<OrderDto> getOrdersByUserId(@RequestParam UUID userId) {
+        return orderService.getAllOrdersByUserId(userId).stream()
+                .map(this::mapOrderToOrderDto)
+                .toList();
+    }
+
+    @ResponseStatus(HttpStatus.CREATED)
+    @PostMapping(path = "/orders", produces = MediaType.APPLICATION_JSON_VALUE,
+            consumes = MediaType.APPLICATION_JSON_VALUE) // TODO for anybody
     public OrderDto postOrder(OrderDto candidateDto) {
         if (candidateDto.getPizzas().isEmpty()) {
             throw new RuntimeException("Empty order");
@@ -47,15 +63,11 @@ public class OrderController {
         return mapOrderToOrderDto(order);
     }
 
-    @GetMapping("/orders/{orderId}") // TODO for admin если заказ не пользователя
-    public OrderDto getOrder(@PathVariable UUID orderId) {
-        Order order = orderService.getOrder(orderId);
-        return mapOrderToOrderDto(order);
-    }
-
-    @DeleteMapping("/orders/{orderId}") // TODO for admin если заказ не пользователя
-    public void deleteOrder(@PathVariable UUID orderId) {
-        orderService.removeOrder(orderId);
+    // TODO for admin
+    @PatchMapping(path = "/orders/{orderId}", produces = MediaType.APPLICATION_JSON_VALUE,
+            consumes = MediaType.APPLICATION_JSON_VALUE)
+    public OrderDto patchOrder(@PathVariable UUID orderId) {
+        return null;
     }
 
     private OrderDto mapOrderToOrderDto(Order order) {
