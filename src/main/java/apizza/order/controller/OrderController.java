@@ -35,7 +35,7 @@ public class OrderController {
 
     @GetMapping(path = "/orders", produces = MediaType.APPLICATION_JSON_VALUE) // TODO for admin
     public Collection<OrderDto> getOrders() {
-        return orderService.getAllOrders().stream()
+        return orderService.getOrders().stream()
                 .map(this::mapOrderToOrderDto)
                 .toList();
     }
@@ -43,7 +43,7 @@ public class OrderController {
     @GetMapping(path = "/orders", produces = MediaType.APPLICATION_JSON_VALUE,
             params = "userId") // TODO for admin
     public Collection<OrderDto> getOrdersByUserId(@RequestParam UUID userId) {
-        return orderService.getAllOrdersByUserId(userId).stream()
+        return orderService.getOrdersByUserId(userId).stream()
                 .map(this::mapOrderToOrderDto)
                 .toList();
     }

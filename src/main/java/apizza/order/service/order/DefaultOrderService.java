@@ -43,13 +43,13 @@ public class DefaultOrderService implements OrderService {
 
     @NonNull
     @Override
-    public List<Order> getAllOrders() {
+    public List<Order> getOrders() {
         return orderRepository.findAll();
     }
 
     @NonNull
     @Override
-    public List<Order> getAllOrdersByUserId(@NonNull UUID userId) {
+    public List<Order> getOrdersByUserId(@NonNull UUID userId) {
         return orderRepository.findAllByUserId(userId);
     }
 
