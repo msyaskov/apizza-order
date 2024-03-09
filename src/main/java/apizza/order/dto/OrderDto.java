@@ -1,5 +1,6 @@
 package apizza.order.dto;
 
+import apizza.order.entity.OrderStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -18,7 +19,8 @@ public class OrderDto {
     private UUID id;
     private UUID userId;
     private LocalDateTime date;
-    private double price;
+    private Double price;
+    private OrderStatus status;
     private Collection<UUID> pizzas;
 
 }

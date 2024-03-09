@@ -25,6 +25,9 @@ public class Order {
     private LocalDateTime date;
     private Double price;
 
+    @Enumerated(EnumType.STRING)
+    private OrderStatus status;
+
     @OneToMany(fetch = FetchType.EAGER)
     @JoinTable(name = "order_pizzas", joinColumns = @JoinColumn(name = "order_id"), inverseJoinColumns = @JoinColumn(name = "pizza_id"))
     private Collection<Pizza> pizzas;
