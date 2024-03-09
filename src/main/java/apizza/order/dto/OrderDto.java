@@ -1,6 +1,11 @@
 package apizza.order.dto;
 
 import apizza.order.entity.OrderStatus;
+import apizza.order.validation.group.PatchCandidateGroup;
+import apizza.order.validation.group.PostCandidateGroup;
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Null;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -16,11 +21,24 @@ import java.util.UUID;
 @AllArgsConstructor
 public class OrderDto {
 
+    @Null(groups = {PostCandidateGroup.class, PatchCandidateGroup.class})
     private UUID id;
+
+    @Null(groups = {PostCandidateGroup.class, PatchCandidateGroup.class})
     private UUID userId;
+
+    @Null(groups = {PostCandidateGroup.class, PatchCandidateGroup.class})
     private LocalDateTime date;
+
+    @Null(groups = {PostCandidateGroup.class, PatchCandidateGroup.class})
     private Double price;
+
+    @Null(groups = PostCandidateGroup.class)
+    @NotNull(groups = PatchCandidateGroup.class)
     private OrderStatus status;
+
+    @NotEmpty(groups = PostCandidateGroup.class)
+    @Null(groups = PatchCandidateGroup.class)
     private Collection<UUID> pizzas;
 
 }

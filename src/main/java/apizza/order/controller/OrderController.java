@@ -6,9 +6,13 @@ import apizza.order.entity.Pizza;
 import apizza.order.mapper.OrderMapper;
 import apizza.order.service.order.OrderService;
 import apizza.order.service.pizza.PizzaService;
+import apizza.order.validation.group.PatchCandidateGroup;
+import apizza.order.validation.group.PostCandidateGroup;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Collection;
@@ -44,14 +48,11 @@ public class OrderController {
                 .toList();
     }
 
+    @Transactional
     @ResponseStatus(HttpStatus.CREATED)
     @PostMapping(path = "/orders", produces = MediaType.APPLICATION_JSON_VALUE,
             consumes = MediaType.APPLICATION_JSON_VALUE) // TODO for anybody
-    public OrderDto postOrder(OrderDto candidateDto) {
-        if (candidateDto.getPizzas().isEmpty()) {
-            throw new RuntimeException("Empty order");
-        }
-
+    public OrderDto postOrder(@RequestBody @Validated(PostCandidateGroup.class) OrderDto candidateDto) {
         List<Pizza> orderedPizzas = pizzaService.getPizzas(candidateDto.getPizzas());
 
         Order candidate = Order.builder()
@@ -66,8 +67,14 @@ public class OrderController {
     // TODO for admin
     @PatchMapping(path = "/orders/{orderId}", produces = MediaType.APPLICATION_JSON_VALUE,
             consumes = MediaType.APPLICATION_JSON_VALUE)
-    public OrderDto patchOrder(@PathVariable UUID orderId) {
-        return null;
+    public OrderDto patchOrder(@PathVariable UUID orderId,
+                               @RequestBody @Validated(PatchCandidateGroup.class) OrderDto candidateDto) {
+        Order candidate = Order.builder()
+                .status(candidateDto.getStatus())
+                .build();
+
+        Order order = orderService.updateOrder(orderId, candidate);
+        return mapOrderToOrderDto(order);
     }
 
     private OrderDto mapOrderToOrderDto(Order order) {

@@ -1,10 +1,15 @@
 package apizza.order.service.order;
 
 import apizza.order.entity.Order;
+import apizza.order.entity.OrderStatus;
 import apizza.order.entity.Pizza;
 import apizza.order.repository.OrderRepository;
+import apizza.order.service.InvalidCandidateException;
 import lombok.RequiredArgsConstructor;
+import org.aspectj.weaver.ast.Or;
+import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -17,34 +22,62 @@ public class DefaultOrderService implements OrderService {
 
     private final OrderRepository orderRepository;
 
+    @NonNull
     @Override
-    public Order addOrder(Order candidate) {
+    public Order addOrder(@NonNull Order candidate) {
         if (candidate.getUserId() == null) {
-            throw new RuntimeException("invalid candidate");
+            throw new InvalidCandidateException("Candidate's userId must not be null");
         }
 
         if (candidate.getPizzas() == null || candidate.getPizzas().isEmpty()) {
-            throw new RuntimeException("invalid candidate");
+            throw new InvalidCandidateException("Candidate's pizzas must not be null or empty");
         }
 
-        candidate.setDate(LocalDateTime.now());
+        candidate.setId(null);
+        candidate.setDate(LocalDateTime.now().withNano(0));
         candidate.setPrice(candidate.getPizzas().stream().mapToDouble(Pizza::getPrice).sum());
+        candidate.setStatus(OrderStatus.PENDING);
 
         return orderRepository.save(candidate);
     }
 
+    @NonNull
     @Override
     public List<Order> getAllOrders() {
         return orderRepository.findAll();
     }
 
+    @NonNull
     @Override
-    public Order getOrder(UUID orderId) {
-        return orderRepository.findById(orderId).orElseThrow(() -> new RuntimeException("order not found"));
+    public List<Order> getAllOrdersByUserId(@NonNull UUID userId) {
+        return orderRepository.findAllByUserId(userId);
+    }
+
+    @NonNull
+    @Override
+    public Order getOrder(@NonNull UUID orderId) {
+        return orderRepository.findById(orderId)
+                .orElseThrow(() -> new OrderNotFoundException(msgOrderNotFoundById(orderId)));
     }
 
     @Override
-    public void removeOrder(UUID orderId) {
+    public void removeOrder(@NonNull UUID orderId) {
         orderRepository.deleteById(orderId);
+    }
+
+    @NonNull
+    @Override
+    @Transactional
+    public Order updateOrder(@NonNull UUID orderId, @NonNull Order candidate) {
+        Order order = getOrder(orderId);
+        if (candidate.getStatus() != null) {
+            order.setStatus(candidate.getStatus());
+        }
+
+        return order;
+    }
+
+    private String msgOrderNotFoundById(UUID orderId) {
+        return "Order[id=%s] not found".formatted(orderId);
     }
 }

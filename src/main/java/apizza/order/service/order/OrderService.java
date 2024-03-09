@@ -1,18 +1,28 @@
 package apizza.order.service.order;
 
 import apizza.order.entity.Order;
+import org.springframework.lang.NonNull;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 
 public interface OrderService {
 
-    Order addOrder(Order candidate);
+    @NonNull
+    Order addOrder(@NonNull Order candidate);
 
+    @NonNull
     List<Order> getAllOrders();
 
-    Order getOrder(UUID orderId);
+    @NonNull
+    List<Order> getAllOrdersByUserId(@NonNull UUID userId);
 
-    void removeOrder(UUID orderId);
+    @NonNull
+    Order getOrder(@NonNull UUID orderId);
 
+    void removeOrder(@NonNull UUID orderId);
+
+    @NonNull
+    Order updateOrder(@NonNull UUID orderId, @NonNull Order candidate);
 }
