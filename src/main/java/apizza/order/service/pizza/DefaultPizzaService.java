@@ -3,13 +3,12 @@ package apizza.order.service.pizza;
 import apizza.order.entity.Pizza;
 import apizza.order.repository.PizzaRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Stream;
 
 @Component
 @RequiredArgsConstructor
@@ -17,8 +16,9 @@ public class DefaultPizzaService implements PizzaService {
 
     private final PizzaRepository pizzaRepository;
 
+    @NonNull
     @Override
-    public Pizza addPizza(Pizza candidate) {
+    public Pizza addPizza(@NonNull Pizza candidate) {
         if (candidate.getId() != null) {
             candidate.setId(null);
         }
@@ -30,30 +30,34 @@ public class DefaultPizzaService implements PizzaService {
         return pizzaRepository.save(candidate);
     }
 
+    @NonNull
     @Override
     public List<Pizza> getPizzas() {
         return pizzaRepository.findAll();
     }
 
+    @NonNull
     @Override
-    public List<Pizza> getPizzas(Iterable<UUID> pizzaIds) {
+    public List<Pizza> getPizzas(@NonNull Iterable<UUID> pizzaIds) {
         return pizzaRepository.findAllById(pizzaIds);
     }
 
+    @NonNull
     @Override
-    public Pizza getPizza(final UUID pizzaId) {
+    public Pizza getPizza(@NonNull final UUID pizzaId) {
         return pizzaRepository.findById(pizzaId)
                 .orElseThrow(() -> new PizzaNotFoundException(msgPizzaByIdNotFoundException(pizzaId)));
     }
 
     @Override
-    public void removePizza(UUID pizzaId) {
+    public void removePizza(@NonNull UUID pizzaId) {
         pizzaRepository.deleteById(pizzaId);
     }
 
+    @NonNull
     @Override
     @Transactional
-    public Pizza updatePizza(UUID pizzaId, Pizza candidate) {
+    public Pizza updatePizza(@NonNull UUID pizzaId, @NonNull Pizza candidate) {
         Pizza pizza = getPizza(pizzaId);
         if (candidate.getName() != null) {
             pizza.setName(candidate.getName());
