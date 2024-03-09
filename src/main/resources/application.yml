@@ -9,3 +9,5 @@ spring:
     username: 'user'
     password: 'pass'
     url: 'jdbc:postgresql://localhost:5432/apizza_order_db'
+  kafka:
+    bootstrap-servers: localhost:29092

@@ -13,7 +13,9 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.AutoConfigureTestEntityManager;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
+import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.http.MediaType;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
@@ -25,15 +27,21 @@ import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @IntegrationTests
-@AutoConfigureTestEntityManager
 public class PizzaControllerIntegrationTests {
 
     @Autowired
     private MockMvc mvc;
+
+    @SpyBean
+    private KafkaTemplate<String, PizzaDto> pizzaKafkaTemplate;
 
     @Autowired
     private TestEntityManager entityManager;
@@ -50,6 +58,10 @@ public class PizzaControllerIntegrationTests {
             entityManager.getEntityManager().createQuery("DELETE FROM Pizza").executeUpdate();
             return 0;
         });
+    }
+
+    @Test
+    void contextLoads() {
     }
 
     private static Stream<Arguments> testGetPizzaMethodSource() {
@@ -160,6 +172,8 @@ public class PizzaControllerIntegrationTests {
 
         Pizza fromDB = transactionTemplate.execute(s -> entityManager.find(Pizza.class, addedPizzaDto.getId()));
         assertPizzaEqualsPizzaDto(fromDB, addedPizzaDto);
+
+        verify(pizzaKafkaTemplate).send(anyString(), anyString(), any(PizzaDto.class));
     }
 
     private static Stream<Arguments> testPostPizzaWhenInvalidCandidateMethodSource() {
@@ -180,6 +194,8 @@ public class PizzaControllerIntegrationTests {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsBytes(candidate)))
                 .andExpect(status().isBadRequest());
+
+        verify(pizzaKafkaTemplate, never()).send(anyString(), anyString(), any(PizzaDto.class));
     }
 
     private static Stream<Arguments> testPatchPizzaMethodSource() {
@@ -204,6 +220,8 @@ public class PizzaControllerIntegrationTests {
                 () -> { if (patch.getDescription() != null) assertEquals(patch.getDescription(), body.getDescription()); },
                 () -> { if (patch.getPrice() != null) assertEquals(patch.getPrice(), body.getPrice()); },
                 () -> { if (patch.getAvailable() != null) assertEquals(patch.getAvailable(), body.getAvailable()); });
+
+        verify(pizzaKafkaTemplate).send(anyString(), anyString(), any(PizzaDto.class));
     }
 
     private static Stream<Arguments> testPatchPizzaWhenInvalidCandidateMethodSource() {
@@ -221,6 +239,8 @@ public class PizzaControllerIntegrationTests {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsBytes(patch)))
                 .andExpect(status().isBadRequest());
+
+        verify(pizzaKafkaTemplate, never()).send(anyString(), anyString(), any(PizzaDto.class));
     }
 
     private static PizzaDto pizzaDto() {

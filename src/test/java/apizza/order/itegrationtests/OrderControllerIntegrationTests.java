@@ -13,10 +13,15 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.mockito.ArgumentMatchers;
+import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.AutoConfigureTestEntityManager;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
+import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.http.MediaType;
+import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.kafka.test.context.EmbeddedKafka;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
@@ -32,11 +37,14 @@ import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @IntegrationTests
-@AutoConfigureTestEntityManager
 public class OrderControllerIntegrationTests {
 
     @Autowired
@@ -48,6 +56,9 @@ public class OrderControllerIntegrationTests {
     @Autowired
     private TransactionTemplate transactionTemplate;
 
+    @SpyBean
+    private KafkaTemplate<String, OrderDto> orderKafkaTemplate;
+
     @Autowired
     private ObjectMapper objectMapper;
 
@@ -58,6 +69,10 @@ public class OrderControllerIntegrationTests {
             entityManager.getEntityManager().createQuery("DELETE FROM Pizza").executeUpdate();
             return 0;
         });
+    }
+
+    @Test
+    void contextLoads() {
     }
 
     private static Stream<Arguments> testGetOrderMethodSource() {
@@ -190,6 +205,8 @@ public class OrderControllerIntegrationTests {
 
         Order fromDB = transactionTemplate.execute(s -> entityManager.find(Order.class, body.getId()));
         assertOrderEqualsOrderDto(fromDB, body);
+
+        verify(orderKafkaTemplate).send(anyString(), anyString(), any(OrderDto.class));
     }
 
     private static Stream<Arguments> testPostOrderWhenInvalidCandidateMethodSource() {
@@ -209,6 +226,8 @@ public class OrderControllerIntegrationTests {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsBytes(candidate)))
                 .andExpect(status().isBadRequest());
+
+        verify(orderKafkaTemplate, never()).send(anyString(), anyString(), any(OrderDto.class));
     }
 
     private static Stream<Arguments> testPatchOrderMethodSource() {
@@ -235,6 +254,8 @@ public class OrderControllerIntegrationTests {
 
         OrderDto body = objectMapper.readValue(mvcResult.getResponse().getContentAsByteArray(), OrderDto.class);
         assertEquals(patch.getStatus(), body.getStatus());
+
+        verify(orderKafkaTemplate).send(anyString(), anyString(), any(OrderDto.class));
     }
 
     private static Stream<Arguments> testPatchOrderWhenInvalidCandidateMethodSource() {
@@ -273,6 +294,8 @@ public class OrderControllerIntegrationTests {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsBytes(patch)))
                 .andExpect(status().isBadRequest());
+
+        verify(orderKafkaTemplate, never()).send(anyString(), anyString(), any(OrderDto.class));
     }
 
     private static PizzaDto pizzaDto() {

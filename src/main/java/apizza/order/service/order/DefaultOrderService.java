@@ -16,7 +16,6 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Stream;
 
-@Component
 @RequiredArgsConstructor
 public class DefaultOrderService implements OrderService {
 

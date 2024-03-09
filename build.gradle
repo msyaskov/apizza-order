@@ -36,6 +36,8 @@ dependencies {
     implementation "org.mapstruct:mapstruct:${mapStructVersion}"
     compileOnly 'org.projectlombok:lombok'
 
+    implementation 'org.springframework.kafka:spring-kafka'
+
     implementation 'org.projectlombok:lombok-mapstruct-binding:0.2.0'
     runtimeOnly 'org.postgresql:postgresql'
     annotationProcessor "org.mapstruct:mapstruct-processor:${mapStructVersion}"
@@ -43,6 +45,7 @@ dependencies {
     annotationProcessor 'org.projectlombok:lombok-mapstruct-binding:0.2.0'
     testImplementation 'com.h2database:h2'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.springframework.kafka:spring-kafka-test'
 }
 
 dependencyManagement {
