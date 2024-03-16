@@ -6,10 +6,12 @@ spring:
     name: apizza-order
   datasource:
     driver-class-name: org.postgresql.Driver
-    username: 'user'
-    password: 'pass'
-    url: 'jdbc:postgresql://localhost:5432/apizza_order_db'
+    username: 'username'
+    password: 'password'
+    url: 'jdbc:postgresql://localhost:5432/apizza_db'
   kafka:
     bootstrap-servers: localhost:29092
   jwt:
     jwks-url: 'http://localhost:5555/.well-known/jwks'
+logstash:
+  host: localhost:5030
