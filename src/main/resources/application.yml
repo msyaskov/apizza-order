@@ -13,6 +13,12 @@ spring:
     bootstrap-servers: localhost:29092
   jwt:
     jwks-url: 'http://localhost:5555/.well-known/jwks'
+  jpa:
+    properties:
+      hibernate:
+        default_schema: order_service
+  flyway:
+    default-schema: ${spring.jpa.properties.hibernate.default_schema}
 logstash:
   host: localhost:5030
 springdoc:
