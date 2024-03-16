@@ -15,3 +15,6 @@ spring:
     jwks-url: 'http://localhost:5555/.well-known/jwks'
 logstash:
   host: localhost:5030
+springdoc:
+  swagger-ui:
+    path: apidocs

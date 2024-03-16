@@ -8,6 +8,7 @@ import apizza.order.service.order.OrderService;
 import apizza.order.service.pizza.PizzaService;
 import apizza.order.validation.group.PatchCandidateGroup;
 import apizza.order.validation.group.PostCandidateGroup;
+import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -31,6 +32,7 @@ public class OrderController {
     private final OrderMapper orderMapper;
 
     @PreAuthorize("isAuthenticated()")
+    @Operation(summary = "Get a order by orderId")
     @PostAuthorize("(hasAuthority('USER') and returnObject.userId.equals(principal)) or hasAuthority('ADMIN')")
     @GetMapping(path = "/orders/{orderId}", produces = MediaType.APPLICATION_JSON_VALUE)
     public OrderDto getOrder(@PathVariable UUID orderId) {
@@ -39,6 +41,7 @@ public class OrderController {
     }
 
     @PreAuthorize("hasAuthority('ADMIN')")
+    @Operation(summary = "Get all orders")
     @GetMapping(path = "/orders", produces = MediaType.APPLICATION_JSON_VALUE)
     public Collection<OrderDto> getOrders() {
         return orderService.getOrders().stream()
@@ -46,6 +49,7 @@ public class OrderController {
                 .toList();
     }
 
+    @Operation(summary = "Get all orders by ids")
     @PreAuthorize("hasAuthority('ADMIN') or (hasAuthority('USER') and #userId.equals(principal))")
     @GetMapping(path = "/orders", produces = MediaType.APPLICATION_JSON_VALUE,
             params = "userId")
@@ -56,8 +60,9 @@ public class OrderController {
     }
 
     @Transactional
-    @ResponseStatus(HttpStatus.CREATED)
     @PreAuthorize("authenticated")
+    @ResponseStatus(HttpStatus.CREATED)
+    @Operation(summary = "Create new order by candidate")
     @PostMapping(path = "/orders", produces = MediaType.APPLICATION_JSON_VALUE,
             consumes = MediaType.APPLICATION_JSON_VALUE)
     public OrderDto postOrder(@RequestBody @Validated(PostCandidateGroup.class) OrderDto candidateDto,
@@ -74,6 +79,7 @@ public class OrderController {
     }
 
     @PreAuthorize("hasAuthority('ADMIN')")
+    @Operation(summary = "Change order by candidate")
     @PatchMapping(path = "/orders/{orderId}", produces = MediaType.APPLICATION_JSON_VALUE,
             consumes = MediaType.APPLICATION_JSON_VALUE)
     public OrderDto patchOrder(@PathVariable UUID orderId,

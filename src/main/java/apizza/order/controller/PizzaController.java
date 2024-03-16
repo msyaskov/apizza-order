@@ -7,6 +7,7 @@ import apizza.order.mapper.PizzaMapper;
 import apizza.order.service.pizza.PizzaService;
 import apizza.order.validation.group.PatchCandidateGroup;
 import apizza.order.validation.group.PostCandidateGroup;
+import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -27,6 +28,7 @@ public class PizzaController {
     private final PizzaMapper pizzaMapper;
 
     @PreAuthorize("authenticated")
+    @Operation(summary = "Get a pizza by id")
     @GetMapping(path = "/pizzas/{pizzaId}", produces = MediaType.APPLICATION_JSON_VALUE)
     public PizzaDto getPizza(@PathVariable UUID pizzaId) {
         Pizza pizza = pizzaService.getPizza(pizzaId);
@@ -34,6 +36,7 @@ public class PizzaController {
     }
 
     @PreAuthorize("authenticated")
+    @Operation(summary = "Get all pizzas")
     @GetMapping(path = "/pizzas", produces = MediaType.APPLICATION_JSON_VALUE)
     public Collection<PizzaDto> getPizzas(@RequestBody(required = false) UUIDListDto ids) {
         List<Pizza> pizzas = (ids == null || ids.getIds() == null) ? pizzaService.getPizzas() : pizzaService.getPizzas(ids.getIds());
@@ -44,6 +47,7 @@ public class PizzaController {
 
     @ResponseStatus(HttpStatus.CREATED)
     @PreAuthorize("hasAuthority('ADMIN')")
+    @Operation(summary = "Create new pizzas by candidate")
     @PostMapping(path = "/pizzas", produces = MediaType.APPLICATION_JSON_VALUE,
             consumes = MediaType.APPLICATION_JSON_VALUE)
     public PizzaDto postPizza(@Validated(PostCandidateGroup.class) @RequestBody PizzaDto candidateDto) {
@@ -53,6 +57,7 @@ public class PizzaController {
     }
 
     @PreAuthorize("hasAuthority('ADMIN')")
+    @Operation(summary = "Change a pizza by candidate")
     @PatchMapping(path =  "/pizzas/{pizzaId}", produces = MediaType.APPLICATION_JSON_VALUE,
             consumes = MediaType.APPLICATION_JSON_VALUE)
     public PizzaDto patchPizza(@PathVariable UUID pizzaId,
