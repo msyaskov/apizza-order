@@ -1,6 +1,7 @@
 eureka:
   client:
-    enabled: false
+    service-url:
+      default-zone: 'http://localhost:8761/eureka'
 spring:
   application:
     name: apizza-order
