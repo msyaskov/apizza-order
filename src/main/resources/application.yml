@@ -17,6 +17,8 @@ spring:
     properties:
       hibernate:
         default_schema: order_service
+    hibernate:
+      ddl-auto: validate
   flyway:
     default-schema: ${spring.jpa.properties.hibernate.default_schema}
 logstash:

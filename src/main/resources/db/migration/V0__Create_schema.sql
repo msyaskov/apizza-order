@@ -8,7 +8,7 @@ CREATE TABLE pizzas (
 CREATE TABLE orders (
     id UUID PRIMARY KEY,
     user_id UUID NOT NULL,
-    date TIMESTAMP WITH TIME ZONE,
+    date TIMESTAMP,
     price DOUBLE PRECISION NOT NULL
 );
 
