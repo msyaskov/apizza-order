@@ -19,7 +19,7 @@ public class WithMockJWTUserSecurityContextFactory implements WithSecurityContex
     public SecurityContext createSecurityContext(WithMockJWTUser annotation) {
         UUID userId = UUID.fromString(annotation.userId());
         SecurityContextImpl securityContext = new SecurityContextImpl();
-        securityContext.setAuthentication(JwtAuthenticationToken.authenticated(userId, DEFAULT_AUTHORITIES));
+        securityContext.setAuthentication(BearerAuthenticationToken.authenticated(userId, DEFAULT_AUTHORITIES));
         return securityContext;
     }
 }

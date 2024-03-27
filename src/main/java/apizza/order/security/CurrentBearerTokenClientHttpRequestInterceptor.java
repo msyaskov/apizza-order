@@ -18,7 +18,7 @@ public class CurrentBearerTokenClientHttpRequestInterceptor implements ClientHtt
     public ClientHttpResponse intercept(@NonNull HttpRequest request, @NonNull byte[] body,
                                         @NonNull ClientHttpRequestExecution execution) throws IOException {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication instanceof JwtAuthenticationToken jwt) {
+        if (authentication instanceof BearerAuthenticationToken jwt) {
             request.getHeaders().add(HttpHeaders.AUTHORIZATION, "Bearer " + jwt.getToken());
         }
 

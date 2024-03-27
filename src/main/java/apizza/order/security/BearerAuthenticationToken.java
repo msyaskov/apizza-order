@@ -10,7 +10,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
-public class JwtAuthenticationToken extends AbstractAuthenticationToken {
+public class BearerAuthenticationToken extends AbstractAuthenticationToken {
 
     @Getter
     private String token;
@@ -18,22 +18,22 @@ public class JwtAuthenticationToken extends AbstractAuthenticationToken {
     @Getter
     private UUID userId;
 
-    public static JwtAuthenticationToken unauthenticated(String token) {
-        return new JwtAuthenticationToken(token);
+    public static BearerAuthenticationToken unauthenticated(String token) {
+        return new BearerAuthenticationToken(token);
     }
 
-    public static JwtAuthenticationToken authenticated(UUID userID, Collection<? extends GrantedAuthority> authorities) {
-        return new JwtAuthenticationToken(userID, authorities);
+    public static BearerAuthenticationToken authenticated(UUID userID, Collection<? extends GrantedAuthority> authorities) {
+        return new BearerAuthenticationToken(userID, authorities);
     }
 
-    private JwtAuthenticationToken(String token) {
+    private BearerAuthenticationToken(String token) {
         super(List.of());
         this.token = token;
 
         super.setAuthenticated(false);
     }
 
-    private JwtAuthenticationToken(UUID userId, Collection<? extends GrantedAuthority> authorities) {
+    private BearerAuthenticationToken(UUID userId, Collection<? extends GrantedAuthority> authorities) {
         super(Collections.unmodifiableCollection(authorities));
         this.userId = userId;
 
