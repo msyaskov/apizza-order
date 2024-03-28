@@ -6,11 +6,13 @@ import apizza.order.event.order.UpdateOrderApplicationEvent;
 import apizza.order.event.pizza.NewPizzaApplicationEvent;
 import apizza.order.event.pizza.UpdatePizzaApplicationEvent;
 import apizza.order.service.order.OrderService;
+import apizza.order.util.logging.Logging;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.lang.NonNull;
 
 import java.util.UUID;
 
+@Logging
 public class PizzaApplicationEventPublisherPizzaServiceDecorator extends AbstractPizzaServiceDecorator {
 
     private final ApplicationEventPublisher applicationEventPublisher;

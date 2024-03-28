@@ -5,11 +5,13 @@ import apizza.order.event.order.NewOrderApplicationEvent;
 import apizza.order.event.order.UpdateOrderApplicationEvent;
 import apizza.order.service.order.AbstractOrderServiceDecorator;
 import apizza.order.service.order.OrderService;
+import apizza.order.util.logging.Logging;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.lang.NonNull;
 
 import java.util.UUID;
 
+@Logging
 public class OrderApplicationEventPublisherOrderServiceDecorator extends AbstractOrderServiceDecorator {
 
     private final ApplicationEventPublisher applicationEventPublisher;

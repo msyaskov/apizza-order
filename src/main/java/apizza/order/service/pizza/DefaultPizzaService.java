@@ -2,6 +2,7 @@ package apizza.order.service.pizza;
 
 import apizza.order.entity.Pizza;
 import apizza.order.repository.PizzaRepository;
+import apizza.order.util.logging.Logging;
 import lombok.RequiredArgsConstructor;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Component;
@@ -10,6 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.UUID;
 
+@Logging
 @Component
 @RequiredArgsConstructor
 public class DefaultPizzaService implements PizzaService {

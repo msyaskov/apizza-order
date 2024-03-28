@@ -1,7 +1,9 @@
 package apizza.order.security;
 
+import apizza.order.util.logging.Logging;
 import com.nimbusds.jose.*;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.Authentication;
@@ -15,6 +17,7 @@ import java.text.ParseException;
 import java.util.*;
 import java.util.stream.Collectors;
 
+@Slf4j
 @RequiredArgsConstructor
 public class BearerAuthenticationProvider implements AuthenticationProvider {
 
@@ -30,6 +33,7 @@ public class BearerAuthenticationProvider implements AuthenticationProvider {
             JWSObject token = JWSObject.parse(((BearerAuthenticationToken) authentication).getToken());
             return obtainAuthenticationFromToken(token);
         } catch (ParseException e) {
+            log.debug("Invalid JWT", e);
             throw new BadCredentialsException("Invalid JWT", e);
         }
     }
@@ -42,23 +46,27 @@ public class BearerAuthenticationProvider implements AuthenticationProvider {
     private BearerAuthenticationToken obtainAuthenticationFromToken(JWSObject token) {
         Payload payload = token.getPayload();
         if (payload == null) {
+            log.debug("JWT payload is null");
             throw new BadCredentialsException("JWT Payload is null");
         }
 
         Map<String, Object> payloadMap = payload.toJSONObject();
         String sub = (String) payloadMap.get("sub");
         if (sub == null) {
+            log.debug("JWT payload sub is null");
             throw new BadCredentialsException("Claim 'sub' is null");
         }
         UUID userId = null;
         try {
             userId = UUID.fromString(sub);
         } catch (Exception e) {
+            log.debug("JWT payload sub is not UUID");
             throw new BadCredentialsException("Claim 'sub' unknown format");
         }
 
         String scopes = (String) payloadMap.get("scope");
         if (scopes == null) {
+            log.debug("JWT payload scope is null");
             throw new BadCredentialsException("Claim 'scope' is null");
         }
 

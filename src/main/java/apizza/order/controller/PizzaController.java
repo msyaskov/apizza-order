@@ -5,6 +5,7 @@ import apizza.order.dto.UUIDListDto;
 import apizza.order.entity.Pizza;
 import apizza.order.mapper.PizzaMapper;
 import apizza.order.service.pizza.PizzaService;
+import apizza.order.util.logging.Logging;
 import apizza.order.validation.group.PatchCandidateGroup;
 import apizza.order.validation.group.PostCandidateGroup;
 import io.swagger.v3.oas.annotations.Operation;
@@ -19,6 +20,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 
+@Logging
 @RestController
 @RequiredArgsConstructor
 public class PizzaController {

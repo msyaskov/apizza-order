@@ -5,6 +5,7 @@ import apizza.order.entity.OrderStatus;
 import apizza.order.entity.Pizza;
 import apizza.order.repository.OrderRepository;
 import apizza.order.service.InvalidCandidateException;
+import apizza.order.util.logging.Logging;
 import lombok.RequiredArgsConstructor;
 import org.aspectj.weaver.ast.Or;
 import org.springframework.lang.NonNull;
@@ -16,6 +17,8 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Stream;
 
+@Logging
+@Component
 @RequiredArgsConstructor
 public class DefaultOrderService implements OrderService {
 

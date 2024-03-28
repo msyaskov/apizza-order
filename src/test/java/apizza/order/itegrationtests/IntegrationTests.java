@@ -16,7 +16,7 @@ import java.lang.annotation.Target;
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 @AutoConfigureTestEntityManager
-@SpringBootTest(properties = "spring.jpa.show-sql=true")
+@SpringBootTest
 @EmbeddedKafka(partitions = 1, brokerProperties = { "listeners=PLAINTEXT://localhost:29092", "port=29092" })
 public @interface IntegrationTests {
 }

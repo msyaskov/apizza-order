@@ -3,6 +3,7 @@ package apizza.order.kafka.pizza;
 import apizza.order.dto.PizzaDto;
 import apizza.order.event.pizza.NewPizzaApplicationEvent;
 import apizza.order.mapper.PizzaMapper;
+import apizza.order.util.logging.Logging;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.ApplicationListener;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -25,6 +26,7 @@ public class KafkaNewPizzaApplicationListener implements ApplicationListener<New
     }
 
 
+    @Logging
     @Override
     public void onApplicationEvent(@NonNull NewPizzaApplicationEvent event) {
         PizzaDto pizzaDto = pizzaMapper.toDto(event.getPizza());

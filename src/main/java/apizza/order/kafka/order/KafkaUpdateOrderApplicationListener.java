@@ -5,6 +5,7 @@ import apizza.order.event.order.NewOrderApplicationEvent;
 import apizza.order.event.order.OrderApplicationEvent;
 import apizza.order.event.order.UpdateOrderApplicationEvent;
 import apizza.order.mapper.OrderMapper;
+import apizza.order.util.logging.Logging;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.ApplicationListener;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -27,6 +28,7 @@ public class KafkaUpdateOrderApplicationListener implements ApplicationListener<
     }
 
 
+    @Logging
     @Override
     public void onApplicationEvent(@NonNull UpdateOrderApplicationEvent event) {
         OrderDto orderDto = orderMapper.toDto(event.getOrder());
